@@ -1,6 +1,8 @@
 # QuickBites: Food Delivery Time Prediction
 
-[![QuickBites UI](quickbites.png)](https://quickbites.streamlit.app/)
+![QuickBites UI](quickbites.png)
+
+**Live Demo:** [https://quickbites.streamlit.app/](https://quickbites.streamlit.app/)
 
 ## 🚀 Quick Start
 
