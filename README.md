@@ -1,6 +1,20 @@
-# Food Delivery Time Prediction
+# QuickBites: Food Delivery Time Prediction
 
-This project predicts food delivery times in Bengaluru using restaurant and customer location data, restaurant type, preparation time, and order hour. It uses geocoding, feature engineering, and a machine learning model (Random Forest) to estimate delivery times.
+[![QuickBites UI](quickbites.png)](https://quickbites.streamlit.app/)
+
+## 🚀 Quick Start
+
+Try the app instantly:
+- **Live Demo:** [https://quickbites.streamlit.app/](https://quickbites.streamlit.app/)
+- No setup required—just click and use!
+
+## 📝 Project Overview
+QuickBites predicts food delivery times in Bengaluru based on restaurant and customer locations, restaurant type, preparation time, and order hour. It’s designed for:
+- Food delivery enthusiasts
+- Data science learners
+- Anyone interested in location-based ML applications
+
+The app uses geocoding, feature engineering, and a Random Forest model to estimate delivery times. You can run it locally or use the live demo above.
 
 ## Features
 - Geocodes restaurant addresses using Nominatim.
