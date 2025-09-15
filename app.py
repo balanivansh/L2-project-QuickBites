@@ -70,7 +70,9 @@ def predict_delivery_time(model, encoder, df_restaurants, df_customers, restaura
     return predicted_time
 
 def main():
-    st.title("Food Delivery Time Predictor 🛵")
+    st.set_page_config(page_title="QuickBites")
+    st.markdown("<h1 style='text-align: center;'>QuickBites</h1>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align: center;'>Your Fast Food Delivery Time Predictor 🛵</h4>", unsafe_allow_html=True)
     st.markdown("---")
     model, encoder, df_restaurants, df_customers = load_components()
     restaurant_name, customer_location, prep_time, order_hour = get_user_input(df_restaurants, df_customers)

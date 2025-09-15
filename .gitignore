@@ -66,5 +66,4 @@ coverage.xml
 .vscode/
 
 # Data files
-*.joblib
-*.csv
+# (Allow .joblib and .csv for deployment)

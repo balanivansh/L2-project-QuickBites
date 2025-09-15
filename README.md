@@ -12,8 +12,8 @@ This project predicts food delivery times in Bengaluru using restaurant and cust
 
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/your-username/your-repo-name.git
-   cd your-repo-name
+   git clone https://github.com/balanivansh/L2-project-QuickBites.git
+   cd L2-project-QuickBites
    ```
 
 2. **Create and activate a Python virtual environment:**
