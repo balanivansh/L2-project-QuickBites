@@ -1,51 +1,87 @@
-"""
-02_train_and_save_model.py
-
-Trains a delivery time prediction model and saves all necessary components.
-"""
-
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.preprocessing import OneHotEncoder
-from geopy.distance import geodesic
 import joblib
 import warnings
+import requests
+import time
+import os
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
-def load_restaurant_data(path='geocoded_restaurants.csv'):
-    """Loads geocoded restaurant data from CSV."""
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+
+def get_real_world_distance_and_time(start_coords, end_coords):
+    """
+    Calls the Google Maps Directions API to get travel distance and time.
+    """
+    start_lat, start_lon = start_coords
+    end_lat, end_lon = end_coords
+    url = "https://maps.googleapis.com/maps/api/directions/json"
+    params = {
+        "origin": f"{start_lat},{start_lon}",
+        "destination": f"{end_lat},{end_lon}",
+        "mode": "driving", 
+        "key": GOOGLE_MAPS_API_KEY
+    }
     try:
-        df = pd.read_csv(path)
-        print("Loaded geocoded restaurant data.")
-        return df
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        if data.get("routes"):
+            leg = data["routes"][0]["legs"][0]
+            travel_time_minutes = leg["duration"]["value"] / 60
+            road_distance_km = leg["distance"]["value"] / 1000
+            return road_distance_km, travel_time_minutes
+        else:
+            print("Directions API could not find a valid route.")
+            return None, None
+    except requests.exceptions.RequestException as e:
+        print(f"Directions API request failed: {e}")
+        return None, None
+
+def load_geocoded_data():
+    """Loads geocoded restaurant and customer data from joblib files."""
+    try:
+        df_restaurants = joblib.load('restaurants_geocoded.joblib')
+        df_customers = joblib.load('customers_geocoded.joblib')
+        print("Loaded geocoded restaurant and customer data.")
+        return df_restaurants, df_customers
     except FileNotFoundError:
-        print(f"Error: '{path}' not found. Please run '01_acquire_and_geocode_data.py' first.")
+        print(f"Error: Geocoded data not found. Please run '01_acquire_and_geocode_data.py' first.")
         exit()
 
-def get_simulated_customers():
-    """Returns a DataFrame with simulated customer locations."""
-    return pd.DataFrame({
-        'customer_location': ['Koramangala', 'Indiranagar', 'Jayanagar', 'Marathahalli', 'Whitefield', 'BTM'],
-        'latitude': [12.9345, 12.9784, 12.9293, 12.9555, 12.9698, 12.9150],
-        'longitude': [77.6254, 77.6408, 77.5845, 77.7160, 77.7500, 77.6105]
-    })
-
-def generate_order_data(df_restaurants, df_customers, n_orders=500):
-    """Generates a synthetic dataset of orders for training."""
+def generate_order_data(df_restaurants, df_customers, n_orders=150):
+    """Generates a synthetic dataset of orders for training using a routing API."""
     final_data = []
-    for _ in range(n_orders):
+    print("\n--- Generating unified dataset with realistic travel times... ---")
+    
+    # Generate data for training, making an API call for each order
+    for i in range(n_orders):
         res = df_restaurants.sample(1).iloc[0]
         cust = df_customers.sample(1).iloc[0]
-        dist_km = geodesic((res['latitude'], res['longitude']), (cust['latitude'], cust['longitude'])).km
+        
+        start_coords = (res['latitude'], res['longitude'])
+        end_coords = (cust['latitude'], cust['longitude'])
+        
+        # Use the real API call to get accurate distance and travel time
+        dist_km, travel_time = get_real_world_distance_and_time(start_coords, end_coords)
+        
+        # If API call fails, skip this record to avoid errors
+        if dist_km is None:
+            continue
+            
         prep_time = np.random.randint(10, 40)
         order_hour = np.random.randint(8, 23)
-        delivery_time = (dist_km * 2.5) + (prep_time * 1.5)
+        
+        delivery_time = travel_time + prep_time
+        
         if 18 <= order_hour <= 21:
             delivery_time += np.random.uniform(5, 15)
+            
         final_data.append({
             'restaurant_name': res['restaurant_name'],
             'customer_location': cust['customer_location'],
@@ -55,6 +91,12 @@ def generate_order_data(df_restaurants, df_customers, n_orders=500):
             'distance_km': dist_km,
             'delivery_time_minutes': max(10, delivery_time + np.random.uniform(-5, 5))
         })
+        
+        # Add a delay to avoid hitting API rate limits
+        time.sleep(0.1) 
+        if (i + 1) % 50 == 0:
+            print(f"Generated {i+1}/{n_orders} orders.")
+            
     df = pd.DataFrame(final_data)
     print("\nGenerated unified dataset.")
     print(df.head())
@@ -103,8 +145,7 @@ def save_components(best_model, encoder, df_restaurants, df_customers):
 
 def main():
     print("--- Starting Model Training and Saving ---")
-    df_restaurants = load_restaurant_data()
-    df_customers = get_simulated_customers()
+    df_restaurants, df_customers = load_geocoded_data()
     df = generate_order_data(df_restaurants, df_customers)
     X, y, encoder = preprocess_features(df)
     best_model, X_train, X_test, y_train, y_test = train_and_optimize_model(X, y)
