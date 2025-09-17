@@ -35,13 +35,14 @@ def get_real_world_distance_and_time(start_coords, end_coords):
             leg = data["routes"][0]["legs"][0]
             travel_time_minutes = leg["duration"]["value"] / 60
             road_distance_km = leg["distance"]["value"] / 1000
-            return road_distance_km, travel_time_minutes
+            polyline = data["routes"][0]["overview_polyline"]["points"]
+            return road_distance_km, travel_time_minutes, polyline
         else:
             print("Directions API could not find a valid route.")
-            return None, None
+            return None, None, None
     except requests.exceptions.RequestException as e:
         print(f"Directions API request failed: {e}")
-        return None, None
+        return None, None, None
 
 def load_geocoded_data():
     """Loads geocoded restaurant and customer data from joblib files."""
@@ -63,17 +64,17 @@ def generate_order_data(df_restaurants, df_customers, n_orders=150):
     for i in range(n_orders):
         res = df_restaurants.sample(1).iloc[0]
         cust = df_customers.sample(1).iloc[0]
-        
+
         start_coords = (res['latitude'], res['longitude'])
         end_coords = (cust['latitude'], cust['longitude'])
-        
+
         # Use the real API call to get accurate distance and travel time
-        dist_km, travel_time = get_real_world_distance_and_time(start_coords, end_coords)
-        
+        dist_km, travel_time, _ = get_real_world_distance_and_time(start_coords, end_coords)
+
         # If API call fails, skip this record to avoid errors
         if dist_km is None:
             continue
-            
+
         prep_time = np.random.randint(10, 40)
         order_hour = np.random.randint(8, 23)
         
