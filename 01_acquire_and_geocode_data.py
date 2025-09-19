@@ -1,10 +1,12 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import pandas as pd
 import time
 import numpy as np
 import requests
 import joblib
 import os
-
 
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 

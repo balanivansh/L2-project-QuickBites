@@ -1,5 +1,10 @@
-streamlit
 pandas
-joblib
-geopy
+numpy
 scikit-learn
+streamlit
+requests
+joblib
+python-dotenv
+folium
+streamlit-folium
+polyline
