@@ -32,90 +32,53 @@ It achieves this by integrating a traffic-forecasted travel time from the Google
 
 ## 🛠️ Setup and Installation
 1. **Clone the Repository**
- ```sh
-
-   git clone https://github.com/balanivansh/L2-project-QuickBites.git
-
-   cd L2-project-QuickBites
-
-   ```
-
-
+   ```sh
+   git clone https://github.com/balanivansh/L2-project-QuickBites.git
+   cd L2-project-QuickBites
+   ```
 
 2. **Create and activate a Python virtual environment:**
-
-   ```sh
-
-   python -m venv l2_project_env
-
-   l2_project_env\Scripts\activate
-
-   ```
-
-
+   ```sh
+   python -m venv l2_project_env
+   l2_project_env\Scripts\activate   # For Windows
+   source l2_project_env/bin/activate   # For Linux/macOS
+   ```
 
 3. **Install dependencies:**
-
-   ```sh
-
-   pip install -r requirements.txt
-
-   ```
-
-
+   ```sh
+   pip install -r requirements.txt
+   ```
 
 4. **Set your Google Maps API key:**
+   - Obtain an API key from [Google Cloud Console](https://console.cloud.google.com/).
+   - Set the environment variable `GOOGLE_MAPS_API_KEY`:
 
-   - Obtain an API key from [Google Cloud Console](https://console.cloud.google.com/).
+     - **Windows (PowerShell):**
+       ```powershell
+       $env:GOOGLE_MAPS_API_KEY="your_api_key_here"
+       ```
 
-   - Set the environment variable `GOOGLE_MAPS_API_KEY`:
+     - **Linux/macOS:**
+       ```sh
+       export GOOGLE_MAPS_API_KEY="your_api_key_here"
+       ```
 
-     - **Windows (PowerShell):**
+   - For **Streamlit Cloud**, set the secret in the app dashboard:
+     - Go to **Settings > Secrets** and add:
+       ```
+       GOOGLE_MAPS_API_KEY = your_api_key_here
+       ```
 
-       ```powershell
-
-       $env:GOOGLE_MAPS_API_KEY="your_api_key_here"
-
-       ```
-
-     - **Linux/macOS:**
-
-       ```sh
-
-       export GOOGLE_MAPS_API_KEY="your_api_key_here"
-
-       ```
-
-
-
-   - For **Streamlit Cloud**, set the secret in the app dashboard:
-
-     - Go to **Settings > Secrets** and add:
-
-       ```
-
-       GOOGLE_MAPS_API_KEY = your_api_key_here
-
-       ```
 5. **Run the data acquisition and model training scripts:**
-
-   ```sh
-
-   python 01_acquire_and_geocode_data.py
-
-   python 02_train_and_save_model.py
-
-   ```
-
-
+   ```sh
+   python 01_acquire_and_geocode_data.py
+   python 02_train_and_save_model.py
+   ```
 
 6. **Launch the Streamlit app:**
-
-   ```sh
-
-   streamlit run app.py
-
-   ```
+   ```sh
+   streamlit run app.py
+   ```
 
 ## 🤖 Model Details
 - **Input Features:** Restaurant Name, Customer Location, Restaurant Type, Prep Time, Order Hour, Day of the Week, Road Distance (km), and Traffic-Forecasted Travel Time (min).
