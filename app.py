@@ -12,11 +12,12 @@ from streamlit_folium import st_folium
 import polyline
 from datetime import datetime, timedelta
 
+# Load the Google Maps API key from environment variables
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
 @st.cache_data
 def get_traffic_forecast_data(start_coords, end_coords, order_hour):
-    """Calls the Google Maps Directions API to get a traffic-forecasted travel time."""
+    # Gets real-time, traffic-aware travel time and the route polyline from the Google Maps Directions API.
     now = datetime.now()
     departure_dt = now.replace(hour=order_hour, minute=0, second=0, microsecond=0)
     if departure_dt < now:
@@ -54,7 +55,7 @@ def get_traffic_forecast_data(start_coords, end_coords, order_hour):
         return None, None, None
 
 def calculate_delivery_fee(distance_km, order_hour):
-    """Calculates a dynamic delivery fee."""
+    # Calculates a simple delivery fee based on distance and a peak-hour surge.
     base_fee, per_km_charge, peak_hour_surge = 30, 8, 25
     fee = base_fee + (distance_km * per_km_charge)
     if 18 <= order_hour <= 21:
@@ -63,7 +64,7 @@ def calculate_delivery_fee(distance_km, order_hour):
 
 @st.cache_data
 def load_components():
-    """Load model, encoder, and location data."""
+    # Caches the loading of all necessary model and data files.
     try:
         model = joblib.load('best_model.joblib')
         encoder = joblib.load('one_hot_encoder.joblib')
@@ -75,7 +76,7 @@ def load_components():
         st.stop()
 
 def predict_delivery_time(model, encoder, df_restaurants, df_customers, restaurant_name, customer_location, prep_time, order_hour, day_of_week):
-    """Prepares features and predicts delivery time using a traffic forecast."""
+    # Predicts the delivery time using the loaded model and real-time API data.
     res_loc = df_restaurants[df_restaurants['restaurant_name'] == restaurant_name].iloc[0]
     cust_loc = df_customers[df_customers['customer_location'] == customer_location].iloc[0]
     
@@ -86,6 +87,7 @@ def predict_delivery_time(model, encoder, df_restaurants, df_customers, restaura
     if dist_km is None:
         return None, None, None, None, None, None
         
+    # Prepares the user's input data for the model.
     input_df = pd.DataFrame([{'restaurant_name': restaurant_name, 'customer_location': customer_location,
                               'restaurant_type': res_loc['restaurant_type'], 'day_of_week': day_of_week}])
     
@@ -101,6 +103,7 @@ def predict_delivery_time(model, encoder, df_restaurants, df_customers, restaura
     
     final_input = pd.concat([input_data, encoded_df], axis=1)
     
+    # Ensures the input features are in the same order as the training data.
     train_columns = model.feature_names_in_
     final_input = final_input.reindex(columns=train_columns, fill_value=0)
     
@@ -110,34 +113,51 @@ def predict_delivery_time(model, encoder, df_restaurants, df_customers, restaura
 
 def main():
     st.set_page_config(page_title="QuickBites Predictor", layout="wide")
-    st.markdown("<h1 style='text-align: center;'>QuickBites Delivery Predictor 🛵</h1>", unsafe_allow_html=True)
-    st.markdown("---")
 
+    st.title("🛵 Welcome to the QuickBites Predictor!")
+    st.markdown("Enter your delivery details below to get a real-time ETA forecast for your food delivery in Bengaluru.", unsafe_allow_html=True)
+    st.markdown("---")
+    
     if 'prediction_results' not in st.session_state:
         st.session_state.prediction_results = None
 
+    # Load all required files.
     model, encoder, df_restaurants, df_customers = load_components()
 
-    st.header("Enter Delivery Details")
+    st.header("⚙️ Enter Delivery Details")
     
     col1, col2, col3 = st.columns(3)
+    
     with col1:
-        restaurant_name = st.selectbox("Choose a Restaurant", options=df_restaurants['restaurant_name'].unique())
+        restaurant_options = df_restaurants['display_name'].unique()
+        try:
+            bk_index = list(restaurant_options).index('Burger King, Koramangala')
+        except ValueError:
+            bk_index = 0
+        selected_display_name = st.selectbox("Choose a Restaurant", options=restaurant_options, index=bk_index)
+        restaurant_name = selected_display_name.split(', ')[0]
+
     with col2:
-        customer_location = st.selectbox("Choose Customer Location", options=df_customers['customer_location'].unique())
+        customer_options = df_customers['customer_location'].unique()
+        try:
+            wf_index = list(customer_options).index('Whitefield')
+        except ValueError:
+            wf_index = 0
+        customer_location = st.selectbox("Choose Customer Location", options=customer_options, index=wf_index)
+
     with col3:
         day_options = {'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3, 'Friday': 4, 'Saturday': 5, 'Sunday': 6}
-        day_name = st.selectbox("Day of the Week", options=day_options.keys(), index=datetime.now().weekday())
+        day_name = st.selectbox("Day of the Week", options=day_options.keys(), index=0)
         day_of_week = day_options[day_name]
 
     c1, c2 = st.columns(2)
     with c1:
         prep_time = st.slider("Restaurant Prep Time (minutes)", 5, 60, 20, 5)
     with c2:
-        order_hour = st.slider("Order Hour (24h format)", 0, 23, datetime.now().hour)
+        order_hour = st.slider("Order Hour (24h format)", 0, 23, 17)
 
-    if st.button("Predict Delivery Time", type="primary", use_container_width=True):
-        with st.spinner('Calculating...'):
+    if st.button("Predict Delivery Time 🚀", type="primary", use_container_width=True):
+        with st.spinner('Forecasting your delivery time...'):
             st.session_state.prediction_results = predict_delivery_time(
                 model, encoder, df_restaurants, df_customers,
                 restaurant_name, customer_location, prep_time, order_hour, day_of_week
@@ -148,7 +168,7 @@ def main():
 
         st.markdown("---")
         if predicted_time is not None:
-            st.subheader("Prediction Results")
+            st.subheader("📈 Prediction Results")
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("Total ETA", f"{predicted_time:.0f} min")
             c2.metric("Food Prep Time", f"{prep_time:.0f} min")
@@ -157,12 +177,14 @@ def main():
             estimated_fee = calculate_delivery_fee(dist_km, order_hour)
             c4.metric("Estimated Delivery Fee", f"₹ {estimated_fee:.2f}")
 
-            st.subheader("Route Visualization")
+            st.subheader("🗺️ Route Visualization")
+            # Decodes the polyline to get the route coordinates.
             route_points = polyline.decode(encoded_polyline)
             map_center = np.mean(route_points, axis=0)
             
+            # Creates an interactive map with start and end markers and the route.
             m = folium.Map(location=map_center, zoom_start=13, tiles="CartoDB positron")
-            folium.Marker(location=start_coords, popup=f"<b>{restaurant_name}</b>", icon=folium.Icon(color="green", icon="cutlery", prefix="fa")).add_to(m)
+            folium.Marker(location=start_coords, popup=f"<b>{selected_display_name}</b>", icon=folium.Icon(color="green", icon="cutlery", prefix="fa")).add_to(m)
             folium.Marker(location=end_coords, popup=f"<b>{customer_location}</b>", icon=folium.Icon(color="red", icon="home", prefix="fa")).add_to(m)
             folium.PolyLine(locations=route_points, color='#0078FF', weight=5).add_to(m)
             
