@@ -48,7 +48,9 @@ def get_traffic_forecast_data(start_coords, end_coords, order_hour):
             encoded_polyline = data["routes"][0]["overview_polyline"]["points"]
             return road_distance_km, travel_time_minutes, encoded_polyline
         else:
-            st.warning("Directions API could not find a valid route.")
+            error_status = data.get("status", "UNKNOWN_ERROR")
+            error_msg = data.get("error_message", "No error message provided by API.")
+            st.error(f"Directions API Error: {error_status} - {error_msg}")
             return None, None, None
     except requests.exceptions.RequestException as e:
         st.error(f"Directions API request failed: {e}")
