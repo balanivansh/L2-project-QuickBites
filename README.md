@@ -6,7 +6,7 @@
 
 
 
-**Live Demo:** [https://quickbites.streamlit.app/](https://quickbites.streamlit.app/)
+**Live Demo:** [https://l2-project-quick-bites.vercel.app/](https://l2-project-quick-bites.vercel.app/)
 
 
 
