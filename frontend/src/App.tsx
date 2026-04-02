@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Clock, Truck, TrendingUp, AlertCircle, Sparkles, Navigation, Coffee, Map } from 'lucide-react';
+import { MapPin, Clock, Truck, AlertCircle, Sparkles, Navigation, Coffee, Map } from 'lucide-react';
 import L from 'leaflet';
 
 // Fix leaflet default icon issue
