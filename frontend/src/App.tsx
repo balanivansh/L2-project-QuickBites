@@ -65,8 +65,10 @@ function App() {
   const [result, setResult] = useState<PredictionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/api/options')
+    axios.get(`${API_BASE_URL}/api/options`)
       .then(res => {
         setOptions(res.data);
         if (res.data.restaurants.length > 0) {
@@ -93,7 +95,7 @@ function App() {
     setResult(null);
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/predict', {
+      const response = await axios.post(`${API_BASE_URL}/api/predict`, {
         restaurant_name: selectedRestaurant,
         customer_location: selectedCustomer,
         prep_time: prepTime,
