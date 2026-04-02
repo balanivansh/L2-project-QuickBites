@@ -3,6 +3,7 @@
 
 
 ![QuickBites UI](quickbites.png)
+![Live Prediction Map](prediction.png)
 
 
 

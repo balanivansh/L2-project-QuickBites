@@ -145,7 +145,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
               </span>
             </h1>
             <p className="text-zinc-400 text-lg leading-relaxed max-w-md">
-              Harness the power of real-time traffic data and our advanced neural network to perfectly time your logistics in Bengaluru.
+              Harness the power of real-time traffic data and our advanced machine learning model to perfectly time your logistics in Bengaluru.
             </p>
           </div>
 
