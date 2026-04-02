@@ -10,3 +10,6 @@ folium
 streamlit-folium
 polyline
 standard-imghdr
+fastapi
+uvicorn
+pydantic

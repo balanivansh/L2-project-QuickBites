@@ -1,3 +1,5 @@
+# NOTE: This Streamlit file is kept for reference only. 
+# The application has been migrated to use a FastAPI backend (api.py) and a React frontend.
 from dotenv import load_dotenv
 load_dotenv()
 
