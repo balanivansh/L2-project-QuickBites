@@ -64,12 +64,18 @@ function App() {
   const [loadingPrediction, setLoadingPrediction] = useState(false);
   const [result, setResult] = useState<PredictionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [backendStatus, setBackendStatus] = useState<'online' | 'waking' | 'offline'>('waking');
+  const [wakingProgress, setWakingProgress] = useState(0);
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
   useEffect(() => {
-    axios.get(`${API_BASE_URL}/api/options`)
-      .then(res => {
+    let pollInterval: NodeJS.Timeout;
+    let progressInterval: NodeJS.Timeout;
+
+    const fetchOptions = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/api/options`);
         setOptions(res.data);
         if (res.data.restaurants.length > 0) {
           const bk = res.data.restaurants.find((r: string) => r.includes('Burger King, Koramangala'));
@@ -79,13 +85,33 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
           const wf = res.data.customers.find((c: string) => c.includes('Whitefield'));
           setSelectedCustomer(wf || res.data.customers[0]);
         }
+        setBackendStatus('online');
         setLoadingOptions(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setError('Connection failed. Make sure the backend AI engine is online.');
-        setLoadingOptions(false);
-      });
+        setError(null);
+        clearInterval(pollInterval);
+        clearInterval(progressInterval);
+      } catch (err: any) {
+        console.error("Backend connection attempt failed:", err.message);
+        setBackendStatus('waking');
+        
+        // Start polling if not already started
+        if (!pollInterval) {
+          pollInterval = setInterval(fetchOptions, 5000);
+        }
+        if (!progressInterval) {
+          progressInterval = setInterval(() => {
+            setWakingProgress(prev => (prev < 95 ? prev + (100 - prev) * 0.1 : prev));
+          }, 1000);
+        }
+      }
+    };
+
+    fetchOptions();
+
+    return () => {
+      clearInterval(pollInterval);
+      clearInterval(progressInterval);
+    };
   }, []);
 
   const handlePredict = async (e: React.FormEvent) => {
@@ -128,7 +154,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
           </span>
         </div>
         <div className="ml-auto flex items-center gap-4 text-sm font-medium text-zinc-400">
-          <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> AI Engine Online</span>
+          <span className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${backendStatus === 'online' ? 'bg-emerald-500' : 'bg-orange-500'} animate-pulse`} /> 
+            {backendStatus === 'online' ? 'AI Engine Online' : 'AI Engine Waking Up...'}
+          </span>
         </div>
       </nav>
 
@@ -160,7 +189,33 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
               </div>
             )}
 
-            {loadingOptions ? (
+            {backendStatus === 'waking' ? (
+              <div className="space-y-6 text-center py-4">
+                <div className="relative w-20 h-20 mx-auto">
+                  <div className="absolute inset-0 border-4 border-orange-500/20 rounded-full" />
+                  <div 
+                    className="absolute inset-0 border-4 border-orange-500 rounded-full border-t-transparent animate-spin" 
+                    style={{ clipPath: `conic-gradient(from 0deg, transparent ${wakingProgress}%, white ${wakingProgress}%)` }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Clock className="w-8 h-8 text-orange-500 animate-pulse" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold text-white">Logistics Engine Cold Start</h3>
+                  <p className="text-zinc-400 text-sm max-w-[250px] mx-auto">
+                    The AI engine is waking up on Render (Free Tier). This takes about 30-50 seconds.
+                  </p>
+                </div>
+                <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-orange-500 to-amber-500 h-full transition-all duration-1000 ease-out"
+                    style={{ width: `${wakingProgress}%` }}
+                  />
+                </div>
+                <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Initializing ML Transformers...</p>
+              </div>
+            ) : loadingOptions ? (
               <div className="space-y-6 animate-pulse">
                 {[1,2,3].map(i => (
                   <div key={i}>

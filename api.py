@@ -9,6 +9,7 @@ import os
 import polyline
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+import traceback
 
 load_dotenv(override=True)
 
@@ -25,12 +26,25 @@ app.add_middleware(
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
 try:
+    print("--- Initializing ML Engine ---")
+    files = ['best_model.joblib', 'one_hot_encoder.joblib', 'restaurants_geocoded.joblib', 'customers_geocoded.joblib']
+    for f in files:
+        if os.path.exists(f):
+            size = os.path.getsize(f)
+            print(f"File found: {f} ({size} bytes)")
+            if size < 500:
+                print(f"WARNING: {f} is suspiciously small. It might be a Git LFS pointer.")
+        else:
+            print(f"CRITICAL ERROR: {f} not found in {os.getcwd()}")
+
     model = joblib.load('best_model.joblib')
     encoder = joblib.load('one_hot_encoder.joblib')
     df_restaurants = joblib.load('restaurants_geocoded.joblib')
     df_customers = joblib.load('customers_geocoded.joblib')
+    print("Success: All models and data loaded.")
 except Exception as e:
     print(f"Error loading models/data: {e}")
+    print(traceback.format_exc())
     model, encoder, df_restaurants, df_customers = None, None, None, None
 
 def get_traffic_forecast_data(start_coords, end_coords, order_hour):
@@ -76,6 +90,11 @@ def calculate_delivery_fee(distance_km, order_hour):
 
 @app.get("/api/options")
 def get_options():
+    if df_restaurants is None or df_customers is None:
+        raise HTTPException(
+            status_code=503, 
+            detail="AI Engine is initializing or failed to load data. Please check server logs."
+        )
     try:
         # Avoid numpy scalar serialization issues by converting to list of primitives
         restaurant_options = df_restaurants['display_name'].unique().tolist()
